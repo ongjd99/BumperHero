@@ -46,7 +46,7 @@ class GameView(context: Context)
     override fun onTouchEvent(event: MotionEvent):Boolean {
         if (event.action == MotionEvent.ACTION_DOWN)
         {
-            val x = event.x.toInt()
+            val x = event.x.toDouble()
             val y = event.y.toInt()
             return gameThread.doClick(x, y)
         }

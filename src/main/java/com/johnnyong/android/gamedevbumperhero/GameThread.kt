@@ -49,7 +49,7 @@ class GameThread(
     fun setRunning(isRunning: Boolean) {
         running = isRunning
     }
-    fun doClick(x: Int, y: Int) : Boolean {
+    fun doClick(x: Double, y: Int) : Boolean {
         return gameViewModel.doClick(x,y)
     }
     fun updateGame() {

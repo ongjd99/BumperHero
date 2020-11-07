@@ -2,34 +2,32 @@ package com.johnnyong.android.gamedevbumperhero
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import kotlin.math.abs
+import kotlin.math.pow
 
 class MonsterSprite(
     private val gameViewModel: GameViewModel,
-    // Maybe we pass in HeroSprite to use its variables
-    // Currently we have to make get functions
-    // I dunno how to do that
     private val image: Bitmap,
-    newHealth: Int,
+    monsterLevel: Int,
     newDamage: Int,
-    private var x: Int,
-    private var y: Int
+    x: Double,
+    y: Int,
+    newMonsterMinVelocity: Double,
+    newMonsterMaxVelocity: Double
 ) : Sprite, Updatable {
     private val screenWidth = gameViewModel.screenWidth
     private val screenHeight = gameViewModel.screenHeight
-
     private var monsterX = x
-    // change to bottom of screen / on top of terrain
     private var monsterY = y
-    /*
-        Maybe make this 0 so monsters are static
-        Otherwise, change xVelocity?
-     */
-    private var xVelocity = 5
-    private var health = newHealth
+    private var xVelocity = newMonsterMinVelocity
+    // Todo: Create a formula for health
+    private var health = 5 + (monsterLevel * 1)
     private var damage = newDamage
     private var falling = true
+    private val monsterMinVelocity = newMonsterMinVelocity
+    private val monsterMaxVelocity = newMonsterMaxVelocity
 
-    override fun draw(canvas: Canvas){
+    override fun draw(canvas: Canvas) {
         canvas.drawBitmap(image, monsterX.toFloat(), monsterY.toFloat(), null)
     }
 
@@ -41,9 +39,9 @@ class MonsterSprite(
         */
         if (falling)
         {
-            // Make the monster fall to the ground (adjust falling speed?)
             monsterY += 10
-            if (monsterY > screenHeight - image.height) {
+            if (monsterY > screenHeight - image.height)
+            {
                 falling = false
             }
         }
@@ -53,24 +51,61 @@ class MonsterSprite(
             // Checks to see if the monster has collided with the player
             /*
                 newX is the position that the monster will be in after updated
-                getPlayerX is the current position of the hero (assuming the middle pixel)
+                getPos() is the current position of the hero (assuming the middle pixel)
                 + (playerImage.width / 2) hopefully gets the right side of the hero image
                 - (playerImage.width / 2) hopefully gets the left side of the hero image
-                Therefore the entire if statement is an attempt to see if the Hero image
+                Therefore the if statement is an attempt to see if the Hero image
                 encapsulates newX
              */
-            // Todo: get these functions to work or do a workaround by introducing HeroSprite into parameter
-/*            if(newX < getPlayerX + (playerImage.width / 2) && newX > getPlayerX - (playerImage.width / 2))
+            if (newX < gameViewModel.heroSprite.getPos() + (gameViewModel.playerImage.width / 2) &&
+                newX > gameViewModel.heroSprite.getPos() - (gameViewModel.playerImage.width / 2))
             {
-                newX *= 2
+                // Upon collision, deal damage to monster
                 health -= damage
-            }*/
-            // Bump of sides of wall
-            if (newX > screenWidth - image.width || newX < 0)
-            {
-                xVelocity = -xVelocity
+                // Destroy monster
+                if (health <= 0) {
+                    gameViewModel.destroyMonsterSpriteAndGrantGold(this)
+                    return
+                }
+
+                /*
+                    Instead of knocking back the monster like originally planned,
+                    The monster instead "panics" and runs faster the opposite way
+                    of the hero for a short period
+                    "Panic": if abs(xVelocity) > monsterMinVelocity
+                */
+                if (abs(xVelocity) < monsterMaxVelocity)
+                {
+                    // Todo: Make an actual formula for panic speed
+                    xVelocity = -xVelocity * 2
+                }
+                else
+                {
+                    xVelocity = -xVelocity
+                }
+
+                newX = monsterX + xVelocity
+                if (newX > screenWidth - image.width || newX < 0) {
+                    xVelocity = -xVelocity
+                }
+                monsterX += xVelocity
             }
-            monsterX += xVelocity
+            else
+            {
+                // Bump of sides of wall
+                if (newX > screenWidth - image.width || newX < 0) {
+                    xVelocity = -xVelocity
+                }
+                // Move as normal
+                monsterX += xVelocity
+            }
+
+            // If monster is in a state of panic, slow down
+            if (abs(xVelocity) > monsterMinVelocity)
+            {
+                // Todo: Formula for velocity decay
+                xVelocity -= 0.1
+            }
         }
     }
 }

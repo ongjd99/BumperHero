@@ -5,7 +5,8 @@ import android.graphics.Canvas
 
 class HeroSprite(
     private val gameViewModel: GameViewModel,
-    private val playerImage: Bitmap
+    private val playerImage: Bitmap,
+    newHeroVelocity: Int
 ) : Sprite, Updatable {
     private val screenWidth = gameViewModel.screenWidth
     private val screenHeight = gameViewModel.screenHeight
@@ -13,7 +14,7 @@ class HeroSprite(
     private var heroX = screenWidth * 0.5f
     // change to bottom of screen / on top of terrain
     private var heroY = (screenHeight - playerImage.height).toFloat()
-    private var xVelocity = 5
+    private var xVelocity = newHeroVelocity
 
     override fun draw(canvas: Canvas){
         canvas.drawBitmap(playerImage, heroX, heroY.toFloat(), null)
@@ -29,5 +30,9 @@ class HeroSprite(
             xVelocity = -xVelocity
         }
         heroX += xVelocity
+    }
+
+    fun getPos(): Float {
+        return heroX
     }
 }
