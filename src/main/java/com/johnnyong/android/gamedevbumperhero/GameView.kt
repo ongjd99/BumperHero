@@ -54,7 +54,7 @@ class GameView(context: Context)
     }
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
-        canvas.drawColor(Color.BLACK)
+        canvas.drawColor(Color.BLUE)
         gameViewModel.draw(canvas)
     }
 }

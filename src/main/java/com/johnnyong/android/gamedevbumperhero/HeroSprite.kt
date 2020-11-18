@@ -17,7 +17,7 @@ class HeroSprite(
     private var xVelocity = newHeroVelocity
 
     override fun draw(canvas: Canvas){
-        canvas.drawBitmap(playerImage, heroX, heroY.toFloat(), null)
+        canvas.drawBitmap(playerImage, heroX, heroY, null)
     }
 
     override fun update() {
