@@ -6,11 +6,11 @@ import com.johnnyong.android.gamedevbumperhero.ActionItem
 import com.johnnyong.android.gamedevbumperhero.GameViewModel
 import com.johnnyong.android.gamedevbumperhero.Sprite
 
-class MonsterMaxVelocityUpgrade(
+class MaxMonstersUserCanSpawne(
     private val gameViewModel: GameViewModel,
     private val upgradeImage: Bitmap,
-    private val x: Int,
-    private val y: Int
+    val x: Int,
+    val y: Int
 ): Sprite, ActionItem {
 
 
@@ -22,7 +22,7 @@ class MonsterMaxVelocityUpgrade(
         if (px > x && px < x + upgradeImage.width
             && py < y + upgradeImage.height && py > y)
         {
-            gameViewModel.goldCheck(4)
+            gameViewModel.goldCheck(3)
             return true
         }
         return false

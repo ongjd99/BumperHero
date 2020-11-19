@@ -17,14 +17,14 @@ class MonsterSprite(
 ) : Sprite, Updatable {
     private val screenWidth = gameViewModel.screenWidth
     private val screenHeight = gameViewModel.screenHeight
+    private var xVelocity = newMonsterMinVelocity
     private var monsterX = x
     private var monsterY = y
-    private var xVelocity = newMonsterMinVelocity
     // Todo: Create a formula for health
     private var health = 5 + (monsterLevel * 1)
     private var damage = newDamage
     private var falling = true
-    private val monsterMinVelocity = newMonsterMinVelocity
+    private val monsterMinVelocity = abs(newMonsterMinVelocity)
     private val monsterMaxVelocity = newMonsterMaxVelocity
 
     override fun draw(canvas: Canvas) {
@@ -77,7 +77,7 @@ class MonsterSprite(
                 if (abs(xVelocity) < monsterMaxVelocity)
                 {
                     // Todo: Make an actual formula for panic speed
-                    xVelocity = -xVelocity * 2
+                    xVelocity = -xVelocity * 5
                 }
                 else
                 {
@@ -104,7 +104,14 @@ class MonsterSprite(
             if (abs(xVelocity) > monsterMinVelocity)
             {
                 // Todo: Formula for velocity decay
-                xVelocity -= 0.1
+                if (xVelocity > 0)
+                {
+                    xVelocity -= 0.1
+                }
+                else
+                {
+                    xVelocity += 0.1
+                }
             }
         }
     }

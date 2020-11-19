@@ -4,8 +4,12 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.johnnyong.android.gamedevbumperhero.Upgrades.*
+import java.util.*
+
+private const val TAG = "MyActivity"
 
 class GameViewModel : ViewModel() {
     // Grab the size of the screen, used to detect bouncing on sides
@@ -24,17 +28,30 @@ class GameViewModel : ViewModel() {
     lateinit var heroSprite: HeroSprite
 
     // gold; for shopping
-    private var gold = 0
+    // Todo: change this when done
+    private var gold = 100
 
+    /*
+        Array of the current upgrades level
+        i = 0; monsterLevel
+        i = 1; damage
+        i = 2; heroVelocity
+        i = 3; monsterMinVelocity
+        i = 4; monsterMaxVelocity
+     */
+    private var upgrades: IntArray = intArrayOf(0, 0, 0, 0, 0)
     // START OF UPGRADES SECTION
     // monsterLevel; determine amount of gold given and hp
     // Todo: Change back to level 1 after testing
-    private var monsterLevel = 100
+    private var monsterLevel = upgrades[0] + 1
     // damage; how much hp the monster loses on collision
-    private var damage = 1
-    private var heroVelocity = 5
-    private var monsterMinVelocity = 5.0
-    private var monsterMaxVelocity = 10.0
+    private var damage = upgrades[1] + 5
+    // heroVelocity; speed of hero
+    private var heroVelocity = upgrades[2] + 5
+    // monsterMinVelocity; speed of monster when not in "panic" state
+    private var monsterMinVelocity = upgrades[3] + 3.0
+    // monsterMaxVelocity; maximum speed of monster in "panic" state
+    private var monsterMaxVelocity = upgrades[4] + 10.0
     // Todo: Change back to an appropriate number after testing
     private var maxMonstersUserCanSpawn = 100
     // END OF UPGRADES SECTION
@@ -48,17 +65,25 @@ class GameViewModel : ViewModel() {
         if (!loaded)
         {
             // Loads the bitmaps from res file
-            playerImage = BitmapFactory.decodeResource(resources,
-                R.drawable.playerimage)
-            monsterImage = BitmapFactory.decodeResource(resources,
-                R.drawable.monsterimage)
-            upgradeIcon = BitmapFactory.decodeResource(resources,
-                R.drawable.upgradeicon)
-            var shopImage = BitmapFactory.decodeResource(resources,
-                R.drawable.shopicon)
+            playerImage = BitmapFactory.decodeResource(
+                resources,
+                R.drawable.playerimage
+            )
+            monsterImage = BitmapFactory.decodeResource(
+                resources,
+                R.drawable.monsterimage
+            )
+            upgradeIcon = BitmapFactory.decodeResource(
+                resources,
+                R.drawable.upgradeicon
+            )
+            val shopImage = BitmapFactory.decodeResource(
+                resources,
+                R.drawable.shopicon
+            )
             // Initialize heroSprite
             heroSprite = HeroSprite(this, playerImage, heroVelocity)
-            var shopSprite = ShopSprite(this, shopImage)
+            val shopSprite = ShopSprite(this, shopImage)
             sprites.add(shopSprite)
             actionItems.add(shopSprite)
             sprites.add(heroSprite)
@@ -68,13 +93,13 @@ class GameViewModel : ViewModel() {
     fun doClick(x: Double, y: Int): Boolean {
         var any = false
         for (item in actionItems) {
-            if (item.doClick(x,y)) {
+            if (item.doClick(x, y)) {
                 any = true
            }
         }
 
         for (item in shopActionItems) {
-            if (item.doClick(x,y)) {
+            if (item.doClick(x, y)) {
                 any = true
             }
         }
@@ -107,22 +132,39 @@ class GameViewModel : ViewModel() {
 
     private fun spawnMob(x: Double, y: Int) {
         // In case the user tries to spawn the monster under the ground
+        Log.i(TAG, "minMonsterVelocity $monsterMinVelocity")
         if (y > screenHeight - monsterImage.height)
         {
-            val monsterSprite = MonsterSprite(this, monsterImage,
-                    monsterLevel, damage, x, screenHeight - monsterImage.height,
-                    monsterMinVelocity, monsterMaxVelocity)
+            var monsterSprite = MonsterSprite(
+                this, monsterImage,
+                monsterLevel, damage, x, screenHeight - monsterImage.height,
+                monsterMinVelocity, monsterMaxVelocity
+            )
             sprites.add(monsterSprite)
             updatables.add(monsterSprite)
         }
         // Otherwise, spawn in the space tapped
         else
         {
-            val monsterSprite = MonsterSprite(this, monsterImage,
+            if ((0..1).random() == 1) {
+                var monsterSprite = MonsterSprite(
+                    this, monsterImage,
                     monsterLevel, damage, x, y,
-                    monsterMinVelocity, monsterMaxVelocity)
-            sprites.add(monsterSprite)
-            updatables.add(monsterSprite)
+                    monsterMinVelocity, monsterMaxVelocity
+                )
+                sprites.add(monsterSprite)
+                updatables.add(monsterSprite)
+            }
+            else {
+                var monsterSprite = MonsterSprite(
+                    this, monsterImage,
+                    monsterLevel, damage, x, y,
+                    -monsterMinVelocity, monsterMaxVelocity
+                )
+                sprites.add(monsterSprite)
+                updatables.add(monsterSprite)
+            }
+
         }
     }
 
@@ -140,26 +182,63 @@ class GameViewModel : ViewModel() {
        shopActionItems.clear()
     }
 
+
+    /*
+    Array of the current upgrades level
+    i = 0; monsterLevel
+    i = 1; damage
+    i = 2; heroVelocity
+    i = 3; monsterMinVelocity
+    i = 4; monsterMaxVelocity
+ */
     fun createShop()
     {
-        val damageUpgrade = DamageUpgrade(upgradeIcon, 100, 100)
-        shopSprites.add(damageUpgrade)
-        shopActionItems.add(damageUpgrade)
-
-        val heroVelocityUpgrade = HeroVelocityUpgrade(upgradeIcon, 300, 100)
-        shopSprites.add(heroVelocityUpgrade)
-        shopActionItems.add(heroVelocityUpgrade)
-
-        val monsterLevelUpgrade = MonsterLevelUpgrade(upgradeIcon, 500, 100)
+        val monsterLevelUpgrade = MonsterLevelUpgrade(this, upgradeIcon, 100, 100)
         shopSprites.add(monsterLevelUpgrade)
         shopActionItems.add(monsterLevelUpgrade)
 
-        val monsterMaxVelocityUpgrade = MonsterMaxVelocityUpgrade(upgradeIcon, 700, 100)
-        shopSprites.add(monsterMaxVelocityUpgrade)
-        shopActionItems.add(monsterMaxVelocityUpgrade)
+        val damageUpgrade = DamageUpgrade(this, upgradeIcon, 300, 100)
+        shopSprites.add(damageUpgrade)
+        shopActionItems.add(damageUpgrade)
 
-        val monsterMinVelocityUpgrade = MonsterMinVelocityUpgrade(upgradeIcon, 900, 100)
+        val heroVelocityUpgrade = HeroVelocityUpgrade(this, upgradeIcon, 500, 100)
+        shopSprites.add(heroVelocityUpgrade)
+        shopActionItems.add(heroVelocityUpgrade)
+
+        val monsterMinVelocityUpgrade = MonsterMinVelocityUpgrade(this, upgradeIcon, 700, 100)
         shopSprites.add(monsterMinVelocityUpgrade)
         shopActionItems.add(monsterMinVelocityUpgrade)
+
+        val monsterMaxVelocityUpgrade = MonsterMaxVelocityUpgrade(this, upgradeIcon, 900, 100)
+        shopSprites.add(monsterMaxVelocityUpgrade)
+        shopActionItems.add(monsterMaxVelocityUpgrade)
+    }
+
+    fun goldCheck(i: Int)
+    {
+        Log.i(TAG, "Gold: $gold")
+        // Todo: Make an appropriate formula for upgrade costs
+        if (gold >= upgrades[i])
+        {
+            Log.i(TAG, "upgrades[i] is " + upgrades[i])
+            gold -= upgrades[i]
+            upgradeIncrease(i);
+            Log.i(TAG, "Gold after purchase: $gold")
+        }
+    }
+
+    private fun upgradeIncrease(i: Int)
+    {
+        upgrades[i] = upgrades[i] + 1
+        when (i)
+        {
+            0 -> monsterLevel = upgrades[i] + 1
+            1 -> damage = upgrades[i] + 5
+            2 -> heroVelocity = upgrades[i] + 5
+            3 -> monsterMinVelocity = upgrades[i] + 3.0
+            4 -> monsterMaxVelocity = upgrades[i] + 10.0
+        }
+        Log.i(TAG, "Upgraded $i")
+
     }
 }
