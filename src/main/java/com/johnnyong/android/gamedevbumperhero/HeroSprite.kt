@@ -32,7 +32,11 @@ class HeroSprite(
         heroX += xVelocity
     }
 
-    fun getPos(): Float {
+    fun getXPos(): Float {
         return heroX
+    }
+
+    fun getYPos(): Float {
+        return heroY
     }
 }

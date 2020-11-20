@@ -25,6 +25,7 @@ class GameViewModel : ViewModel() {
     lateinit var monsterImage: Bitmap
     lateinit var playerImage: Bitmap
     lateinit var upgradeIcon: Bitmap
+    lateinit var bossImage: Bitmap
     lateinit var heroSprite: HeroSprite
 
     // gold; for shopping
@@ -43,7 +44,7 @@ class GameViewModel : ViewModel() {
     // START OF UPGRADES SECTION
     // monsterLevel; determine amount of gold given and hp
     // Todo: Change back to level 1 after testing
-    private var monsterLevel = upgrades[0] + 1
+    private var monsterLevel = upgrades[0] + 100
     // damage; how much hp the monster loses on collision
     private var damage = upgrades[1] + 5
     // heroVelocity; speed of hero
@@ -60,6 +61,7 @@ class GameViewModel : ViewModel() {
     // Prevent user from spawning too much and potentially crashing
     // (Not entirely sure if it will crash but I'll just assume so
     private val trueMaxMonstersUserCanSpawn = 100
+    private val monstersSpawned = 0
 
     fun load(resources: Resources?) {
         if (!loaded)
@@ -81,6 +83,10 @@ class GameViewModel : ViewModel() {
                 resources,
                 R.drawable.shopicon
             )
+            bossImage = BitmapFactory.decodeResource(
+                resources,
+                R.drawable.bossimage
+            )
             // Initialize heroSprite
             heroSprite = HeroSprite(this, playerImage, heroVelocity)
             val shopSprite = ShopSprite(this, shopImage)
@@ -90,7 +96,7 @@ class GameViewModel : ViewModel() {
             updatables.add(heroSprite)
         }
     }
-    fun doClick(x: Double, y: Int): Boolean {
+    fun doClick(x: Double, y: Double): Boolean {
         var any = false
         for (item in actionItems) {
             if (item.doClick(x, y)) {
@@ -109,7 +115,14 @@ class GameViewModel : ViewModel() {
             If none, we can assume the user clicked on an empty space
             Spawn a mob if so
         */
-        if(!any && currentMonsterCount < maxMonstersUserCanSpawn &&
+        if (!any && currentMonsterCount < maxMonstersUserCanSpawn &&
+            currentMonsterCount < trueMaxMonstersUserCanSpawn &&
+            (0..5).random() == 5)
+        {
+            spawnBossMob(x, y)
+            currentMonsterCount++
+        }
+        else if(!any && currentMonsterCount < maxMonstersUserCanSpawn &&
                 currentMonsterCount < trueMaxMonstersUserCanSpawn)
         {
             spawnMob(x, y)
@@ -130,14 +143,14 @@ class GameViewModel : ViewModel() {
         for (updatable in updatables) updatable.update()
     }
 
-    private fun spawnMob(x: Double, y: Int) {
+    private fun spawnMob(x: Double, y: Double) {
         // In case the user tries to spawn the monster under the ground
         Log.i(TAG, "minMonsterVelocity $monsterMinVelocity")
         if (y > screenHeight - monsterImage.height)
         {
             var monsterSprite = MonsterSprite(
                 this, monsterImage,
-                monsterLevel, damage, x, screenHeight - monsterImage.height,
+                monsterLevel, damage, x, screenHeight - monsterImage.height.toDouble(),
                 monsterMinVelocity, monsterMaxVelocity
             )
             sprites.add(monsterSprite)
@@ -160,6 +173,44 @@ class GameViewModel : ViewModel() {
                     this, monsterImage,
                     monsterLevel, damage, x, y,
                     -monsterMinVelocity, monsterMaxVelocity
+                )
+                sprites.add(monsterSprite)
+                updatables.add(monsterSprite)
+            }
+
+        }
+    }
+
+    private fun spawnBossMob(x: Double, y: Double) {
+        // In case the user tries to spawn the monster under the ground
+        Log.i(TAG, "minMonsterVelocity $monsterMinVelocity")
+        if (y > screenHeight - bossImage.height)
+        {
+            var monsterSprite = MonsterSprite(
+                this, bossImage,
+                monsterLevel, damage + 5, x, screenHeight - monsterImage.height.toDouble(),
+                monsterMinVelocity - 2, monsterMaxVelocity
+            )
+            sprites.add(monsterSprite)
+            updatables.add(monsterSprite)
+        }
+        // Otherwise, spawn in the space tapped
+        else
+        {
+            if ((0..1).random() == 1) {
+                var monsterSprite = MonsterSprite(
+                    this, bossImage,
+                    monsterLevel + 5, damage, x, y,
+                    monsterMinVelocity - 2, monsterMaxVelocity
+                )
+                sprites.add(monsterSprite)
+                updatables.add(monsterSprite)
+            }
+            else {
+                var monsterSprite = MonsterSprite(
+                    this, bossImage,
+                    monsterLevel + 5, damage, x, y,
+                    -(monsterMinVelocity - 2), monsterMaxVelocity
                 )
                 sprites.add(monsterSprite)
                 updatables.add(monsterSprite)

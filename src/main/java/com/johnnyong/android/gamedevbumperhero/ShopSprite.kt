@@ -21,7 +21,7 @@ class ShopSprite(
         canvas.drawBitmap(shopImage, xOffset, yOffset, null)
     }
 
-    override fun doClick(px: Double, py:Int): Boolean {
+    override fun doClick(px: Double, py:Double): Boolean {
         if (px > xOffset && py < yOffset + shopImage.height)
         {
             if (shopDisplayed) {

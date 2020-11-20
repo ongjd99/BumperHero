@@ -47,7 +47,7 @@ class GameView(context: Context)
         if (event.action == MotionEvent.ACTION_DOWN)
         {
             val x = event.x.toDouble()
-            val y = event.y.toInt()
+            val y = event.y.toDouble()
             return gameThread.doClick(x, y)
         }
         return false

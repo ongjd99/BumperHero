@@ -18,7 +18,7 @@ class MaxMonstersUserCanSpawne(
         canvas.drawBitmap(upgradeImage, x.toFloat(), y.toFloat(), null)
     }
 
-    override fun doClick(px: Double, py: Int): Boolean {
+    override fun doClick(px: Double, py:Double): Boolean {
         if (px > x && px < x + upgradeImage.width
             && py < y + upgradeImage.height && py > y)
         {
