@@ -53,15 +53,14 @@ class GameViewModel : ViewModel() {
     private var monsterMinVelocity = upgrades[3] + 3.0
     // monsterMaxVelocity; maximum speed of monster in "panic" state
     private var monsterMaxVelocity = upgrades[4] + 10.0
-    // Todo: Change back to an appropriate number after testing
-    private var maxMonstersUserCanSpawn = 100
+    // Todo: Change back to an appropriate number after testing (10)
+    private var maxMonstersUserCanSpawn = 10
     // END OF UPGRADES SECTION
 
     private var currentMonsterCount = 0
     // Prevent user from spawning too much and potentially crashing
     // (Not entirely sure if it will crash but I'll just assume so
     private val trueMaxMonstersUserCanSpawn = 100
-    private val monstersSpawned = 0
 
     fun load(resources: Resources?) {
         if (!loaded)
@@ -69,11 +68,11 @@ class GameViewModel : ViewModel() {
             // Loads the bitmaps from res file
             playerImage = BitmapFactory.decodeResource(
                 resources,
-                R.drawable.playerimage
+                R.drawable.bumper_knight
             )
             monsterImage = BitmapFactory.decodeResource(
                 resources,
-                R.drawable.monsterimage
+                R.drawable.small_ball_monster
             )
             upgradeIcon = BitmapFactory.decodeResource(
                 resources,
@@ -85,11 +84,18 @@ class GameViewModel : ViewModel() {
             )
             bossImage = BitmapFactory.decodeResource(
                 resources,
-                R.drawable.bossimage
+                R.drawable.big_ball_monster
             )
+            val backgroundImage = BitmapFactory.decodeResource(
+                resources,
+                R.drawable.bumper_hero_bg
+            )
+            val scaledBackground = Bitmap.createScaledBitmap(backgroundImage, screenWidth, screenHeight, false)
             // Initialize heroSprite
+            val background = Background(this, scaledBackground)
             heroSprite = HeroSprite(this, playerImage, heroVelocity)
             val shopSprite = ShopSprite(this, shopImage)
+            sprites.add(background)
             sprites.add(shopSprite)
             actionItems.add(shopSprite)
             sprites.add(heroSprite)
@@ -184,7 +190,7 @@ class GameViewModel : ViewModel() {
     private fun spawnBossMob(x: Double, y: Double) {
         // In case the user tries to spawn the monster under the ground
         Log.i(TAG, "minMonsterVelocity $monsterMinVelocity")
-        if (y > screenHeight - bossImage.height)
+        if (y > screenHeight + bossImage.height)
         {
             var monsterSprite = MonsterSprite(
                 this, bossImage,

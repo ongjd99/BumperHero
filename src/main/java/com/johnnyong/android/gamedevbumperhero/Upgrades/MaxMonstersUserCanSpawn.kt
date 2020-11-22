@@ -6,7 +6,7 @@ import com.johnnyong.android.gamedevbumperhero.ActionItem
 import com.johnnyong.android.gamedevbumperhero.GameViewModel
 import com.johnnyong.android.gamedevbumperhero.Sprite
 
-class MaxMonstersUserCanSpawne(
+class MaxMonstersUserCanSpawned(
     private val gameViewModel: GameViewModel,
     private val upgradeImage: Bitmap,
     val x: Int,

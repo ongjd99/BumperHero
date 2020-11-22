@@ -1,11 +1,13 @@
 package com.johnnyong.android.gamedevbumperhero
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+
 
 class GameView(context: Context)
     : SurfaceView(context), SurfaceHolder.Callback {
@@ -25,7 +27,8 @@ class GameView(context: Context)
         holder: SurfaceHolder,
         format: Int,
         width: Int,
-        height: Int) {
+        height: Int
+    ) {
     }
     override fun surfaceCreated(holder: SurfaceHolder) {
         gameThread.setRunning(true)
@@ -56,5 +59,6 @@ class GameView(context: Context)
         super.draw(canvas)
         canvas.drawColor(Color.BLUE)
         gameViewModel.draw(canvas)
+
     }
 }

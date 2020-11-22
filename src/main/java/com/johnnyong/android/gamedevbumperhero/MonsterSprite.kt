@@ -50,7 +50,8 @@ class MonsterSprite(
          */
         if (newX < gameViewModel.heroSprite.getXPos() + (gameViewModel.playerImage.width / 2) &&
             newX > gameViewModel.heroSprite.getXPos() - (gameViewModel.playerImage.width / 2) &&
-                monsterY > gameViewModel.heroSprite.getYPos() - (gameViewModel.playerImage.height/2))
+                monsterY > gameViewModel.heroSprite.getYPos() - (gameViewModel.playerImage.height/2)
+                )
         {
             // Upon collision, deal damage to monster
             health -= damage
@@ -85,10 +86,12 @@ class MonsterSprite(
             /*
                 Trying to make monsters get knocked up when they get hit
                 Not working at all
-            /////////
             yVelocity += 20
             monsterY -= yVelocity
-           */
+
+             */
+
+
 
             monsterX += xVelocity
         }
