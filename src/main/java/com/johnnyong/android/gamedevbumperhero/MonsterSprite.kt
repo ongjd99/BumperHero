@@ -1,13 +1,14 @@
 package com.johnnyong.android.gamedevbumperhero
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
+import android.graphics.*
+import android.util.Log
 import kotlin.math.abs
-import kotlin.math.pow
+
+private const val TAG = "MyActivity"
 
 class MonsterSprite(
     private val gameViewModel: GameViewModel,
-    private val image: Bitmap,
+    private var image: Bitmap,
     monsterLevel: Int,
     newDamage: Int,
     x: Double,
@@ -22,12 +23,22 @@ class MonsterSprite(
     private var monsterX = x
     private var monsterY = y
     // Todo: Create a formula for health
-    private var health = 5 + (monsterLevel * 1)
+    private var maxHealth = 5 + (monsterLevel * 1)
+    private var health = maxHealth
     private var damage = newDamage
     private val monsterMinVelocity = abs(newMonsterMinVelocity)
     private val monsterMaxVelocity = newMonsterMaxVelocity
 
+
     override fun draw(canvas: Canvas) {
+        val paint = Paint()
+        paint.color = Color.BLACK
+        paint.textSize = 50f
+
+        canvas.drawText(
+            "$health / $maxHealth", monsterX.toFloat(),
+            monsterY.toFloat(), paint
+        )
         canvas.drawBitmap(image, monsterX.toFloat(), monsterY.toFloat(), null)
     }
 

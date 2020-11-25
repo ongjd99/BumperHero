@@ -1,0 +1,6 @@
+If you spawn too many sprites and all of them bunch up, when the hero hits a large amount it
+makes all the sprites spaz
+If the hero velocity is significantly larger than the monster speed, the monster speed "panic"
+can't catch up and pinballs inside of the hero sprite until the hero sprite passes by or the
+monster sprite dies
+Bosses no work

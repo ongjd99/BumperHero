@@ -1,13 +1,10 @@
 package com.johnnyong.android.gamedevbumperhero
 
 import android.content.res.Resources
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
+import android.graphics.*
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.johnnyong.android.gamedevbumperhero.Upgrades.*
-import java.util.*
 
 private const val TAG = "MyActivity"
 
@@ -22,10 +19,11 @@ class GameViewModel : ViewModel() {
     private val updatables = mutableListOf<Updatable>()
     private var actionItems = mutableListOf<ActionItem>()
     // monsterImage, playerImage, heroSprite; not entire sure if they should be here
-    lateinit var monsterImage: Bitmap
+    private lateinit var monsterImage: Bitmap
+    private lateinit var upgradeIcon: Bitmap
+    private lateinit var bossImage: Bitmap
+    private lateinit var background: Bitmap
     lateinit var playerImage: Bitmap
-    lateinit var upgradeIcon: Bitmap
-    lateinit var bossImage: Bitmap
     lateinit var heroSprite: HeroSprite
 
     // gold; for shopping
@@ -38,23 +36,23 @@ class GameViewModel : ViewModel() {
         i = 1; damage
         i = 2; heroVelocity
         i = 3; monsterMinVelocity
-        i = 4; monsterMaxVelocity
+        i = 4; maxMonstersUserCanSpawn
      */
     private var upgrades: IntArray = intArrayOf(0, 0, 0, 0, 0)
     // START OF UPGRADES SECTION
     // monsterLevel; determine amount of gold given and hp
     // Todo: Change back to level 1 after testing
-    private var monsterLevel = upgrades[0] + 100
+    private var monsterLevel = upgrades[0]
     // damage; how much hp the monster loses on collision
-    private var damage = upgrades[1] + 5
+    private var damage = upgrades[1] + 1
     // heroVelocity; speed of hero
-    private var heroVelocity = upgrades[2] + 5
+    private var heroVelocity = upgrades[2] + 5f
     // monsterMinVelocity; speed of monster when not in "panic" state
     private var monsterMinVelocity = upgrades[3] + 3.0
     // monsterMaxVelocity; maximum speed of monster in "panic" state
-    private var monsterMaxVelocity = upgrades[4] + 10.0
-    // Todo: Change back to an appropriate number after testing (10)
-    private var maxMonstersUserCanSpawn = 10
+    private var monsterMaxVelocity = monsterMinVelocity + 5f
+    // Todo: Change back to an appropriate number after testing (5)
+    private var maxMonstersUserCanSpawn = upgrades[4] + 5
     // END OF UPGRADES SECTION
 
     private var currentMonsterCount = 0
@@ -86,22 +84,26 @@ class GameViewModel : ViewModel() {
                 resources,
                 R.drawable.big_ball_monster
             )
-            val backgroundImage = BitmapFactory.decodeResource(
-                resources,
-                R.drawable.bumper_hero_bg
+            background = Bitmap.createScaledBitmap(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.bumper_hero_bg
+                ),
+                screenWidth,
+                screenHeight,
+                false
             )
-            val scaledBackground = Bitmap.createScaledBitmap(backgroundImage, screenWidth, screenHeight, false)
-            // Initialize heroSprite
-            val background = Background(this, scaledBackground)
-            heroSprite = HeroSprite(this, playerImage, heroVelocity)
+
+            heroSprite = HeroSprite(this, playerImage,
+                screenWidth * 0.5f, heroVelocity)
             val shopSprite = ShopSprite(this, shopImage)
-            sprites.add(background)
             sprites.add(shopSprite)
             actionItems.add(shopSprite)
             sprites.add(heroSprite)
             updatables.add(heroSprite)
         }
     }
+
     fun doClick(x: Double, y: Double): Boolean {
         var any = false
         for (item in actionItems) {
@@ -140,6 +142,13 @@ class GameViewModel : ViewModel() {
 
     fun draw(canvas: Canvas) {
         // For each item in the sprite list, draw them
+        canvas.drawBitmap(background, 0f, 0f, null)
+
+        val paint = Paint()
+        paint.color = Color.BLACK
+        paint.textSize = 100f
+
+        canvas.drawText("Gold: $gold", 100f, 100f, paint)
         for(sprite in sprites) sprite.draw(canvas)
         for(sprite in shopSprites) sprite.draw(canvas)
     }
@@ -151,10 +160,9 @@ class GameViewModel : ViewModel() {
 
     private fun spawnMob(x: Double, y: Double) {
         // In case the user tries to spawn the monster under the ground
-        Log.i(TAG, "minMonsterVelocity $monsterMinVelocity")
         if (y > screenHeight - monsterImage.height)
         {
-            var monsterSprite = MonsterSprite(
+            val monsterSprite = MonsterSprite(
                 this, monsterImage,
                 monsterLevel, damage, x, screenHeight - monsterImage.height.toDouble(),
                 monsterMinVelocity, monsterMaxVelocity
@@ -166,7 +174,7 @@ class GameViewModel : ViewModel() {
         else
         {
             if ((0..1).random() == 1) {
-                var monsterSprite = MonsterSprite(
+                val monsterSprite = MonsterSprite(
                     this, monsterImage,
                     monsterLevel, damage, x, y,
                     monsterMinVelocity, monsterMaxVelocity
@@ -175,7 +183,7 @@ class GameViewModel : ViewModel() {
                 updatables.add(monsterSprite)
             }
             else {
-                var monsterSprite = MonsterSprite(
+                val monsterSprite = MonsterSprite(
                     this, monsterImage,
                     monsterLevel, damage, x, y,
                     -monsterMinVelocity, monsterMaxVelocity
@@ -189,12 +197,11 @@ class GameViewModel : ViewModel() {
 
     private fun spawnBossMob(x: Double, y: Double) {
         // In case the user tries to spawn the monster under the ground
-        Log.i(TAG, "minMonsterVelocity $monsterMinVelocity")
         if (y > screenHeight + bossImage.height)
         {
-            var monsterSprite = MonsterSprite(
+            val monsterSprite = MonsterSprite(
                 this, bossImage,
-                monsterLevel, damage + 5, x, screenHeight - monsterImage.height.toDouble(),
+                (monsterLevel * 2) + 5, damage, x, screenHeight - monsterImage.height.toDouble(),
                 monsterMinVelocity - 2, monsterMaxVelocity
             )
             sprites.add(monsterSprite)
@@ -204,18 +211,18 @@ class GameViewModel : ViewModel() {
         else
         {
             if ((0..1).random() == 1) {
-                var monsterSprite = MonsterSprite(
+                val monsterSprite = MonsterSprite(
                     this, bossImage,
-                    monsterLevel + 5, damage, x, y,
-                    monsterMinVelocity - 2, monsterMaxVelocity
+                    (monsterLevel * 2) + 5, damage, x, y,
+                    (monsterMinVelocity - 2), monsterMaxVelocity
                 )
                 sprites.add(monsterSprite)
                 updatables.add(monsterSprite)
             }
             else {
-                var monsterSprite = MonsterSprite(
+                val monsterSprite = MonsterSprite(
                     this, bossImage,
-                    monsterLevel + 5, damage, x, y,
+                    (monsterLevel * 2) + 5, damage, x, y,
                     -(monsterMinVelocity - 2), monsterMaxVelocity
                 )
                 sprites.add(monsterSprite)
@@ -250,37 +257,34 @@ class GameViewModel : ViewModel() {
  */
     fun createShop()
     {
-        val monsterLevelUpgrade = MonsterLevelUpgrade(this, upgradeIcon, 100, 100)
+        val monsterLevelUpgrade = `0MonsterLevelUpgrade`(this, upgradeIcon, 100, 100)
         shopSprites.add(monsterLevelUpgrade)
         shopActionItems.add(monsterLevelUpgrade)
 
-        val damageUpgrade = DamageUpgrade(this, upgradeIcon, 300, 100)
+        val damageUpgrade = `1DamageUpgrade`(this, upgradeIcon, 300, 100)
         shopSprites.add(damageUpgrade)
         shopActionItems.add(damageUpgrade)
 
-        val heroVelocityUpgrade = HeroVelocityUpgrade(this, upgradeIcon, 500, 100)
+        val heroVelocityUpgrade = `2HeroVelocityUpgrade`(this, upgradeIcon, 500, 100)
         shopSprites.add(heroVelocityUpgrade)
         shopActionItems.add(heroVelocityUpgrade)
 
-        val monsterMinVelocityUpgrade = MonsterMinVelocityUpgrade(this, upgradeIcon, 700, 100)
-        shopSprites.add(monsterMinVelocityUpgrade)
-        shopActionItems.add(monsterMinVelocityUpgrade)
+        val monsterVelocityUpgrade = `3MonsterVelocityUpgrade`(this, upgradeIcon, 700, 100)
+        shopSprites.add(monsterVelocityUpgrade)
+        shopActionItems.add(monsterVelocityUpgrade)
 
-        val monsterMaxVelocityUpgrade = MonsterMaxVelocityUpgrade(this, upgradeIcon, 900, 100)
-        shopSprites.add(monsterMaxVelocityUpgrade)
-        shopActionItems.add(monsterMaxVelocityUpgrade)
+        val maxMonstersUserCanSpawn = `4MaxMonstersUserCanSpawn`(this, upgradeIcon, 900, 100)
+        shopSprites.add(maxMonstersUserCanSpawn)
+        shopActionItems.add(maxMonstersUserCanSpawn)
     }
 
     fun goldCheck(i: Int)
     {
-        Log.i(TAG, "Gold: $gold")
         // Todo: Make an appropriate formula for upgrade costs
         if (gold >= upgrades[i])
         {
-            Log.i(TAG, "upgrades[i] is " + upgrades[i])
             gold -= upgrades[i]
-            upgradeIncrease(i);
-            Log.i(TAG, "Gold after purchase: $gold")
+            upgradeIncrease(i)
         }
     }
 
@@ -291,11 +295,21 @@ class GameViewModel : ViewModel() {
         {
             0 -> monsterLevel = upgrades[i] + 1
             1 -> damage = upgrades[i] + 5
-            2 -> heroVelocity = upgrades[i] + 5
+            2 -> {
+                heroVelocity = upgrades[i] + 5f
+                if (heroSprite.getVelocity() < 0)
+                {
+                    heroVelocity = -heroVelocity
+                }
+                sprites.removeAt(sprites.indexOf(heroSprite))
+                updatables.removeAt(updatables.indexOf(heroSprite))
+                val currentX = heroSprite.getXPos()
+                heroSprite = HeroSprite(this, playerImage, currentX, heroVelocity)
+                sprites.add(heroSprite)
+                updatables.add(heroSprite)
+            }
             3 -> monsterMinVelocity = upgrades[i] + 3.0
-            4 -> monsterMaxVelocity = upgrades[i] + 10.0
+            4 -> maxMonstersUserCanSpawn = upgrades[i] + 5
         }
-        Log.i(TAG, "Upgraded $i")
-
     }
 }

@@ -10,9 +10,6 @@ class ShopSprite(
     private val screenWidth = gameViewModel.screenWidth
     private val screenHeight = gameViewModel.screenHeight
     private var shopDisplayed = false;
-    private val shopSprites = mutableListOf<Sprite>()
-    private var shopActionItems = mutableListOf<ActionItem>()
-
 
     private val xOffset = (screenWidth - shopImage.width).toFloat()
     private val yOffset = 0f
@@ -26,20 +23,15 @@ class ShopSprite(
         {
             if (shopDisplayed) {
                 gameViewModel.destroyShop()
-                shopDisplayed = false;
+                shopDisplayed = false
             }
             else
             {
                 gameViewModel.createShop()
-                shopDisplayed = true;
+                shopDisplayed = true
             }
             return true
         }
-        return false;
-    }
-
-    fun returnShopDisplayed(): Boolean
-    {
-        return shopDisplayed
+        return false
     }
 }
