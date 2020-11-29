@@ -2,6 +2,8 @@ package com.johnnyong.android.gamedevbumperhero.Upgrades
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import com.johnnyong.android.gamedevbumperhero.ActionItem
 import com.johnnyong.android.gamedevbumperhero.GameViewModel
 import com.johnnyong.android.gamedevbumperhero.Sprite
@@ -13,16 +15,30 @@ class `2HeroVelocityUpgrade`(
     val y: Int
 ): Sprite, ActionItem {
 
+    private var level = gameViewModel.upgrades[2]
 
     override fun draw(canvas: Canvas) {
         canvas.drawBitmap(upgradeImage, x.toFloat(), y.toFloat(), null)
+
+        val paint = Paint()
+        paint.color = Color.BLACK
+        paint.textSize = 50f
+        // Upgrade Level
+        canvas.drawText(level.toString(), 610f, 240f, paint)
+        // Gold Cost
+        canvas.drawText(level.toString(), 750f, 240f, paint)
+
     }
 
-    override fun doClick(px: Double, py:Double): Boolean {
+    override fun doClick(px: Double, py: Double): Boolean {
         if (px > x && px < x + upgradeImage.width
             && py < y + upgradeImage.height && py > y)
         {
-            gameViewModel.goldCheck(2)
+            val upgradePurchased = gameViewModel.goldCheck(2)
+            if (upgradePurchased)
+            {
+                level++
+            }
             return true
         }
         return false

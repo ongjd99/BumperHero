@@ -79,14 +79,11 @@ class MonsterSprite(
                 "Panic": if abs(xVelocity) > monsterMinVelocity
             */
 
-            if (abs(xVelocity) < monsterMaxVelocity)
-            {
+            xVelocity = if (abs(xVelocity) < monsterMaxVelocity) {
                 // Todo: Make an actual formula for panic speed
-                xVelocity = -xVelocity * 5
-            }
-            else
-            {
-                xVelocity = -xVelocity
+                -xVelocity * 5
+            } else {
+                -xVelocity
             }
 
             newX = monsterX + xVelocity

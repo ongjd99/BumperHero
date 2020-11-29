@@ -20,10 +20,15 @@ class GameViewModel : ViewModel() {
     private var actionItems = mutableListOf<ActionItem>()
     // monsterImage, playerImage, heroSprite; not entire sure if they should be here
     private lateinit var monsterImage: Bitmap
-    private lateinit var upgradeIcon: Bitmap
     private lateinit var bossImage: Bitmap
     private lateinit var background: Bitmap
+    private lateinit var heroDamageUpgradeImage: Bitmap
+    private lateinit var heroVelocityUpgradeImage: Bitmap
+    private lateinit var monsterLevelUpgradeImage: Bitmap
+    private lateinit var monsterMaxSpawnUpgradeImage: Bitmap
+    private lateinit var monsterMinVelocityUpgradeImage: Bitmap
     lateinit var playerImage: Bitmap
+    private lateinit var flippedPlayerImage: Bitmap
     lateinit var heroSprite: HeroSprite
 
     // gold; for shopping
@@ -38,7 +43,7 @@ class GameViewModel : ViewModel() {
         i = 3; monsterMinVelocity
         i = 4; maxMonstersUserCanSpawn
      */
-    private var upgrades: IntArray = intArrayOf(0, 0, 0, 0, 0)
+    var upgrades: IntArray = intArrayOf(0, 0, 0, 0, 0)
     // START OF UPGRADES SECTION
     // monsterLevel; determine amount of gold given and hp
     // Todo: Change back to level 1 after testing
@@ -68,17 +73,17 @@ class GameViewModel : ViewModel() {
                 resources,
                 R.drawable.bumper_knight
             )
+            flippedPlayerImage = BitmapFactory.decodeResource(
+                resources,
+                R.drawable.bumper_knight_flipped
+            )
             monsterImage = BitmapFactory.decodeResource(
                 resources,
                 R.drawable.small_ball_monster
             )
-            upgradeIcon = BitmapFactory.decodeResource(
-                resources,
-                R.drawable.upgradeicon
-            )
             val shopImage = BitmapFactory.decodeResource(
                 resources,
-                R.drawable.shopicon
+                R.drawable.shop_icon
             )
             bossImage = BitmapFactory.decodeResource(
                 resources,
@@ -87,20 +92,85 @@ class GameViewModel : ViewModel() {
             background = Bitmap.createScaledBitmap(
                 BitmapFactory.decodeResource(
                     resources,
-                    R.drawable.bumper_hero_bg
+                    R.drawable.bumper_hero_bg_no_cloud
                 ),
                 screenWidth,
                 screenHeight,
                 false
             )
+            val cloud = Bitmap.createScaledBitmap(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.cloud
+                ),
+                375,
+                150,
+                false
+            )
+            heroDamageUpgradeImage = Bitmap.createScaledBitmap(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.hero_damage_upgrade
+                ),
+                375,
+                150,
+                false
+            )
+            heroVelocityUpgradeImage = Bitmap.createScaledBitmap(
+                    BitmapFactory.decodeResource(
+                        resources,
+                        R.drawable.hero_velocity_upgrade
+                    ),
+                375,
+                150,
+                false
+            )
+            monsterLevelUpgradeImage = Bitmap.createScaledBitmap(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.monster_level_upgrade
+                ),
+                375,
+                150,
+                false
+            )
+            monsterMaxSpawnUpgradeImage = Bitmap.createScaledBitmap(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.monster_max_spawn_upgrade
+                ),
+                375,
+                150,
+                false
+            )
+            monsterMinVelocityUpgradeImage = Bitmap.createScaledBitmap(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.monster_velocity_upgrade
+                ),
+                375,
+                150,
+                false
+            )
+            Log.i(TAG,"Screen Width: $screenWidth")
+            Log.i(TAG, "Screen Height: $screenHeight")
 
             heroSprite = HeroSprite(this, playerImage,
-                screenWidth * 0.5f, heroVelocity)
+                flippedPlayerImage,
+                screenWidth * 0.5f, heroVelocity, false)
             val shopSprite = ShopSprite(this, shopImage)
             sprites.add(shopSprite)
             actionItems.add(shopSprite)
             sprites.add(heroSprite)
             updatables.add(heroSprite)
+            var cloudSprite = CloudSprite(this, cloud,
+                1100f, 200f)
+            sprites.add(cloudSprite)
+            updatables.add(cloudSprite)
+            cloudSprite = CloudSprite(this, cloud,
+                0f, 300f)
+            sprites.add(cloudSprite)
+            updatables.add(cloudSprite)
         }
     }
 
@@ -146,9 +216,9 @@ class GameViewModel : ViewModel() {
 
         val paint = Paint()
         paint.color = Color.BLACK
-        paint.textSize = 100f
+        paint.textSize = 75f
 
-        canvas.drawText("Gold: $gold", 100f, 100f, paint)
+        canvas.drawText("Gold: $gold", 1770f, 250f, paint)
         for(sprite in sprites) sprite.draw(canvas)
         for(sprite in shopSprites) sprite.draw(canvas)
     }
@@ -236,7 +306,7 @@ class GameViewModel : ViewModel() {
         sprites.removeAt(sprites.indexOf(monsterSprite))
         updatables.removeAt(updatables.indexOf(monsterSprite))
         // Todo: Maybe make a formula for earning gold cause rn its linear
-        gold += monsterLevel
+        gold += monsterLevel + 1
         currentMonsterCount--
     }
 
@@ -257,35 +327,37 @@ class GameViewModel : ViewModel() {
  */
     fun createShop()
     {
-        val monsterLevelUpgrade = `0MonsterLevelUpgrade`(this, upgradeIcon, 100, 100)
+        val monsterLevelUpgrade = `0MonsterLevelUpgrade`(this, monsterLevelUpgradeImage, 100, 100)
         shopSprites.add(monsterLevelUpgrade)
         shopActionItems.add(monsterLevelUpgrade)
 
-        val damageUpgrade = `1DamageUpgrade`(this, upgradeIcon, 300, 100)
+        val damageUpgrade = `1DamageUpgrade`(this, heroDamageUpgradeImage, 100, 300)
         shopSprites.add(damageUpgrade)
         shopActionItems.add(damageUpgrade)
 
-        val heroVelocityUpgrade = `2HeroVelocityUpgrade`(this, upgradeIcon, 500, 100)
+        val heroVelocityUpgrade = `2HeroVelocityUpgrade`(this, heroVelocityUpgradeImage, 500, 100)
         shopSprites.add(heroVelocityUpgrade)
         shopActionItems.add(heroVelocityUpgrade)
 
-        val monsterVelocityUpgrade = `3MonsterVelocityUpgrade`(this, upgradeIcon, 700, 100)
+        val monsterVelocityUpgrade = `3MonsterVelocityUpgrade`(this, monsterMinVelocityUpgradeImage, 500, 300)
         shopSprites.add(monsterVelocityUpgrade)
         shopActionItems.add(monsterVelocityUpgrade)
 
-        val maxMonstersUserCanSpawn = `4MaxMonstersUserCanSpawn`(this, upgradeIcon, 900, 100)
+        val maxMonstersUserCanSpawn = `4MaxMonstersUserCanSpawn`(this, monsterMaxSpawnUpgradeImage, 900, 100)
         shopSprites.add(maxMonstersUserCanSpawn)
         shopActionItems.add(maxMonstersUserCanSpawn)
     }
 
-    fun goldCheck(i: Int)
+    fun goldCheck(i: Int) : Boolean
     {
         // Todo: Make an appropriate formula for upgrade costs
         if (gold >= upgrades[i])
         {
             gold -= upgrades[i]
             upgradeIncrease(i)
+            return true
         }
+        return false
     }
 
     private fun upgradeIncrease(i: Int)
@@ -304,7 +376,18 @@ class GameViewModel : ViewModel() {
                 sprites.removeAt(sprites.indexOf(heroSprite))
                 updatables.removeAt(updatables.indexOf(heroSprite))
                 val currentX = heroSprite.getXPos()
-                heroSprite = HeroSprite(this, playerImage, currentX, heroVelocity)
+                val isFlipped = heroSprite.flipped
+                heroSprite = if (isFlipped) {
+                    HeroSprite(
+                        this, playerImage,
+                        flippedPlayerImage, currentX, heroVelocity, isFlipped
+                    )
+                } else {
+                    HeroSprite(
+                        this, playerImage,
+                        flippedPlayerImage, currentX, heroVelocity, isFlipped
+                    )
+                }
                 sprites.add(heroSprite)
                 updatables.add(heroSprite)
             }

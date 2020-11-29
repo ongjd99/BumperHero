@@ -21,14 +21,12 @@ class ShopSprite(
     override fun doClick(px: Double, py:Double): Boolean {
         if (px > xOffset && py < yOffset + shopImage.height)
         {
-            if (shopDisplayed) {
+            shopDisplayed = if (shopDisplayed) {
                 gameViewModel.destroyShop()
-                shopDisplayed = false
-            }
-            else
-            {
+                false
+            } else {
                 gameViewModel.createShop()
-                shopDisplayed = true
+                true
             }
             return true
         }
