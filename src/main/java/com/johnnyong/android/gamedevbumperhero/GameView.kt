@@ -3,6 +3,7 @@ package com.johnnyong.android.gamedevbumperhero
 import android.R
 import android.R.attr
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -52,6 +53,7 @@ class GameView(context: Context)
             }
             retry = false
         }
+
     }
     override fun onTouchEvent(event: MotionEvent):Boolean {
         if (event.action == MotionEvent.ACTION_DOWN)

@@ -4,6 +4,7 @@ import android.content.res.Resources
 import android.graphics.*
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.johnnyong.android.gamedevbumperhero.SavedPreferences.getStoredQuery
 import com.johnnyong.android.gamedevbumperhero.Upgrades.*
 
 private const val TAG = "MyActivity"
@@ -33,7 +34,7 @@ class GameViewModel : ViewModel() {
 
     // gold; for shopping
     // Todo: change this when done
-    private var gold = 100
+    private var gold = 0
 
     /*
         Array of the current upgrades level
@@ -43,6 +44,7 @@ class GameViewModel : ViewModel() {
         i = 3; monsterMinVelocity
         i = 4; maxMonstersUserCanSpawn
      */
+
     var upgrades: IntArray = intArrayOf(0, 0, 0, 0, 0)
     // START OF UPGRADES SECTION
     // monsterLevel; determine amount of gold given and hp
@@ -64,6 +66,7 @@ class GameViewModel : ViewModel() {
     // Prevent user from spawning too much and potentially crashing
     // (Not entirely sure if it will crash but I'll just assume so
     private val trueMaxMonstersUserCanSpawn = 100
+    private var monstersKilled = 0
 
     fun load(resources: Resources?) {
         if (!loaded)
@@ -154,23 +157,27 @@ class GameViewModel : ViewModel() {
             )
             Log.i(TAG,"Screen Width: $screenWidth")
             Log.i(TAG, "Screen Height: $screenHeight")
-
+            // Adding Hero Sprites
             heroSprite = HeroSprite(this, playerImage,
                 flippedPlayerImage,
                 screenWidth * 0.5f, heroVelocity, false)
+            sprites.add(heroSprite)
+            updatables.add(heroSprite)
+            // Adding Shop Sprites
             val shopSprite = ShopSprite(this, shopImage)
             sprites.add(shopSprite)
             actionItems.add(shopSprite)
-            sprites.add(heroSprite)
-            updatables.add(heroSprite)
+            // Adding CloudSprites
             var cloudSprite = CloudSprite(this, cloud,
                 1100f, 200f)
             sprites.add(cloudSprite)
             updatables.add(cloudSprite)
+
             cloudSprite = CloudSprite(this, cloud,
                 0f, 300f)
             sprites.add(cloudSprite)
             updatables.add(cloudSprite)
+
         }
     }
 
@@ -219,6 +226,7 @@ class GameViewModel : ViewModel() {
         paint.textSize = 75f
 
         canvas.drawText("Gold: $gold", 1770f, 250f, paint)
+        canvas.drawText( "Score: $monstersKilled", 900f, 75f, paint)
         for(sprite in sprites) sprite.draw(canvas)
         for(sprite in shopSprites) sprite.draw(canvas)
     }
@@ -269,34 +277,34 @@ class GameViewModel : ViewModel() {
         // In case the user tries to spawn the monster under the ground
         if (y > screenHeight + bossImage.height)
         {
-            val monsterSprite = MonsterSprite(
+            val bossSprite = BossSprite(
                 this, bossImage,
                 (monsterLevel * 2) + 5, damage, x, screenHeight - monsterImage.height.toDouble(),
                 monsterMinVelocity - 2, monsterMaxVelocity
             )
-            sprites.add(monsterSprite)
-            updatables.add(monsterSprite)
+            sprites.add(bossSprite)
+            updatables.add(bossSprite)
         }
         // Otherwise, spawn in the space tapped
         else
         {
             if ((0..1).random() == 1) {
-                val monsterSprite = MonsterSprite(
+                val bossSprite = BossSprite(
                     this, bossImage,
                     (monsterLevel * 2) + 5, damage, x, y,
                     (monsterMinVelocity - 2), monsterMaxVelocity
                 )
-                sprites.add(monsterSprite)
-                updatables.add(monsterSprite)
+                sprites.add(bossSprite)
+                updatables.add(bossSprite)
             }
             else {
-                val monsterSprite = MonsterSprite(
+                val bossSprite = BossSprite(
                     this, bossImage,
                     (monsterLevel * 2) + 5, damage, x, y,
                     -(monsterMinVelocity - 2), monsterMaxVelocity
                 )
-                sprites.add(monsterSprite)
-                updatables.add(monsterSprite)
+                sprites.add(bossSprite)
+                updatables.add(bossSprite)
             }
 
         }
@@ -308,6 +316,16 @@ class GameViewModel : ViewModel() {
         // Todo: Maybe make a formula for earning gold cause rn its linear
         gold += monsterLevel + 1
         currentMonsterCount--
+        monstersKilled++
+    }
+
+    fun destroyBossSpriteAndGrantGold(bossSprite: BossSprite){
+        sprites.removeAt(sprites.indexOf(bossSprite))
+        updatables.removeAt(updatables.indexOf(bossSprite))
+        // Todo: Maybe make a formula for earning gold cause rn its linear
+        gold += monsterLevel * 2 + 5
+        currentMonsterCount--
+        monstersKilled++
     }
 
     fun destroyShop()
