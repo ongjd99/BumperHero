@@ -1,15 +1,23 @@
 package com.johnnyong.android.gamedevbumperhero
 
+import android.app.Application
+import android.content.Context
+import android.content.SharedPreferences
 import android.content.res.Resources
 import android.graphics.*
+import android.preference.PreferenceManager
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
-import com.johnnyong.android.gamedevbumperhero.SavedPreferences.getStoredQuery
+import com.johnnyong.android.gamedevbumperhero.SavedPreferences.getStoredGold
 import com.johnnyong.android.gamedevbumperhero.Upgrades.*
+import java.util.*
 
 private const val TAG = "MyActivity"
+private const val PREF_UPGRADES = "upgrades"
+private const val PREF_GOLD = "gold"
 
-class GameViewModel : ViewModel() {
+class GameViewModel(public val app: Application) : AndroidViewModel(app) {
     // Grab the size of the screen, used to detect bouncing on sides
     val screenWidth = Resources.getSystem().displayMetrics.widthPixels
     val screenHeight = Resources.getSystem().displayMetrics.heightPixels
@@ -45,7 +53,8 @@ class GameViewModel : ViewModel() {
         i = 4; maxMonstersUserCanSpawn
      */
 
-    var upgrades: IntArray = intArrayOf(0, 0, 0, 0, 0)
+    var upgrades = intArrayOf(0, 0, 0, 0, 0)
+
     // START OF UPGRADES SECTION
     // monsterLevel; determine amount of gold given and hp
     // Todo: Change back to level 1 after testing
@@ -69,6 +78,15 @@ class GameViewModel : ViewModel() {
     private var monstersKilled = 0
 
     fun load(resources: Resources?) {
+        // Loads saved data for upgrades
+        val temp = SavedPreferences.getStoredUpgrades(app)
+        temp.removeSuffix(",")
+        val st = StringTokenizer(temp, ",")
+
+        for(i in upgrades.indices) {
+            upgrades[i] = st.nextToken().toInt()
+        }
+
         if (!loaded)
         {
             // Loads the bitmaps from res file
@@ -178,6 +196,8 @@ class GameViewModel : ViewModel() {
             sprites.add(cloudSprite)
             updatables.add(cloudSprite)
 
+            // Loads saved gold value
+            gold = SavedPreferences.getStoredGold(app)
         }
     }
 
@@ -315,6 +335,7 @@ class GameViewModel : ViewModel() {
         updatables.removeAt(updatables.indexOf(monsterSprite))
         // Todo: Maybe make a formula for earning gold cause rn its linear
         gold += monsterLevel + 1
+        SavedPreferences.setStoredGold(app, gold)
         currentMonsterCount--
         monstersKilled++
     }
@@ -372,6 +393,7 @@ class GameViewModel : ViewModel() {
         if (gold >= upgrades[i])
         {
             gold -= upgrades[i]
+            SavedPreferences.setStoredGold(app, gold)
             upgradeIncrease(i)
             return true
         }
@@ -381,6 +403,7 @@ class GameViewModel : ViewModel() {
     private fun upgradeIncrease(i: Int)
     {
         upgrades[i] = upgrades[i] + 1
+        SavedPreferences.setStoredUpgrades(app, upgrades)
         when (i)
         {
             0 -> monsterLevel = upgrades[i] + 1
@@ -412,5 +435,7 @@ class GameViewModel : ViewModel() {
             3 -> monsterMinVelocity = upgrades[i] + 3.0
             4 -> maxMonstersUserCanSpawn = upgrades[i] + 5
         }
+
+        SavedPreferences.setStoredUpgrades(app, upgrades)
     }
 }
