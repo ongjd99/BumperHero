@@ -6,7 +6,7 @@ import kotlin.math.abs
 
 private const val TAG = "MyActivity"
 
-class MonsterSprite(
+class PowerUpMonsterSprite(
     private val gameViewModel: GameViewModel,
     private var image: Bitmap,
     monsterLevel: Int,
@@ -62,14 +62,14 @@ class MonsterSprite(
          */
         if (newX < gameViewModel.heroSprite.getXPos() + (gameViewModel.playerImage.width / 2) &&
             newX > gameViewModel.heroSprite.getXPos() - (gameViewModel.playerImage.width / 2) &&
-                monsterY > gameViewModel.heroSprite.getYPos() - (gameViewModel.playerImage.height/2)
-                )
+            monsterY > gameViewModel.heroSprite.getYPos() - (gameViewModel.playerImage.height/2)
+        )
         {
             // Upon collision, deal damage to monster
             health -= damage
             Log.i(TAG, "Damage: $damage")
             // Destroy monster
-            if (gameViewModel.destroyMonsterSpriteAndGrantGold(this)) {
+            if (gameViewModel.destroyPowerUpMonsterSpriteAndGrantGold(this)) {
                 return
             }
 

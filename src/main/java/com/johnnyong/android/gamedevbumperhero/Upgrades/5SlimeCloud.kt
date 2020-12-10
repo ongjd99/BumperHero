@@ -7,16 +7,18 @@ import android.graphics.Paint
 import com.johnnyong.android.gamedevbumperhero.ActionItem
 import com.johnnyong.android.gamedevbumperhero.GameViewModel
 import com.johnnyong.android.gamedevbumperhero.Sprite
+import com.johnnyong.android.gamedevbumperhero.Updatable
+import java.lang.Math.pow
 import kotlin.math.pow
 
-class `1DamageUpgrade`(
+class `5SlimeCloud`(
     private val gameViewModel: GameViewModel,
     private val upgradeImage: Bitmap,
     val x: Int,
     val y: Int
 ): Sprite, ActionItem {
 
-    private var level = gameViewModel.upgrades[1]
+    private var level = gameViewModel.upgrades[4]
 
     override fun draw(canvas: Canvas) {
         canvas.drawBitmap(upgradeImage, x.toFloat(), y.toFloat(), null)
@@ -24,18 +26,17 @@ class `1DamageUpgrade`(
         val paint = Paint()
         paint.color = Color.BLACK
         paint.textSize = 50f
-
         // Upgrade Level
-        canvas.drawText(level.toString(), 350f, 460f, paint)
+        canvas.drawText(level.toString(), 1350f, 460f, paint)
         // Gold Cost
-        canvas.drawText(formula(1).toString(), 240f, 535f, paint)
+        canvas.drawText(formula(5).toString(), 1240f, 535f, paint)
     }
 
     override fun doClick(px: Double, py: Double): Boolean {
         if (px > x && px < x + upgradeImage.width
             && py < y + upgradeImage.height && py > y)
         {
-            val upgradePurchased = goldCheck(1)
+            val upgradePurchased = goldCheck(5)
             if (upgradePurchased)
             {
                 level++
@@ -47,23 +48,16 @@ class `1DamageUpgrade`(
 
     private fun goldCheck(i: Int) : Boolean
     {
-        // Todo: Make an appropriate formula for upgrade costs
         val cost = formula(i)
-        if (gameViewModel.getGold() >= cost)
-        {
+        return if (gameViewModel.getGold() >= cost) {
             gameViewModel.takeGold(cost, i)
-            return true
-        }
-        return false
+            true
+        } else
+            false
     }
 
     private fun formula(i: Int) : Long
     {
-        return (0.042 * gameViewModel.upgrades[i].toDouble().pow(5.0) +
-                0.42 * gameViewModel.upgrades[i].toDouble().pow(4.0) -
-                0.64 * gameViewModel.upgrades[i].toDouble().pow(3.0) -
-                0.039 * gameViewModel.upgrades[i].toDouble().pow(2.0) +
-                10.652 * gameViewModel.upgrades[i] +
-                5).toLong()
+        return (100 +  (5 * gameViewModel.upgrades[i].toDouble()).pow(2.0).toLong())
     }
 }

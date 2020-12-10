@@ -2,19 +2,22 @@ package com.johnnyong.android.gamedevbumperhero
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.util.Log
+import java.util.*
+
+private const val TAG = "MyActivity"
 
 class ShopSprite(
     private val gameViewModel: GameViewModel,
     private val shopImage: Bitmap,
 ): Sprite, ActionItem {
     private val screenWidth = gameViewModel.screenWidth
-    private val screenHeight = gameViewModel.screenHeight
     private var shopDisplayed = false;
 
     private val xOffset = (screenWidth - shopImage.width).toFloat()
     private val yOffset = 0f
 
-    override fun draw(canvas: Canvas){
+    override fun draw(canvas: Canvas) {
         canvas.drawBitmap(shopImage, xOffset, yOffset, null)
     }
 
@@ -32,4 +35,5 @@ class ShopSprite(
         }
         return false
     }
+
 }

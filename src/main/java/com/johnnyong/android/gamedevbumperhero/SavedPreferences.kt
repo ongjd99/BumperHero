@@ -19,7 +19,7 @@ object SavedPreferences {
             .apply()
     }
 
-    fun getStoredUpgrades(context: Context): String {
+    fun getStoredUpgrades(context: Context): String? {
         val prefs =
             PreferenceManager.getDefaultSharedPreferences(context)
 
@@ -42,4 +42,3 @@ object SavedPreferences {
             .apply()
     }
 }
-

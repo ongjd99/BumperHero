@@ -7,6 +7,7 @@ import android.graphics.Paint
 import com.johnnyong.android.gamedevbumperhero.ActionItem
 import com.johnnyong.android.gamedevbumperhero.GameViewModel
 import com.johnnyong.android.gamedevbumperhero.Sprite
+import kotlin.math.pow
 
 class `2HeroVelocityUpgrade`(
     private val gameViewModel: GameViewModel,
@@ -24,9 +25,9 @@ class `2HeroVelocityUpgrade`(
         paint.color = Color.BLACK
         paint.textSize = 50f
         // Upgrade Level
-        canvas.drawText(level.toString(), 610f, 240f, paint)
+        canvas.drawText(level.toString(), 850f, 210f, paint)
         // Gold Cost
-        canvas.drawText(level.toString(), 750f, 240f, paint)
+        canvas.drawText(formula(2).toString(), 740f, 285f, paint)
 
     }
 
@@ -34,7 +35,7 @@ class `2HeroVelocityUpgrade`(
         if (px > x && px < x + upgradeImage.width
             && py < y + upgradeImage.height && py > y)
         {
-            val upgradePurchased = gameViewModel.goldCheck(2)
+            val upgradePurchased = goldCheck(2)
             if (upgradePurchased)
             {
                 level++
@@ -42,5 +43,27 @@ class `2HeroVelocityUpgrade`(
             return true
         }
         return false
+    }
+
+    private fun goldCheck(i: Int) : Boolean
+    {
+        // Todo: Make an appropriate formula for upgrade costs
+        val cost = formula(i)
+        if (gameViewModel.getGold() >= cost)
+        {
+            gameViewModel.takeGold(cost, i)
+            return true
+        }
+        return false
+    }
+
+    private fun formula(i: Int) : Long
+    {
+        return (0.042 * gameViewModel.upgrades[i].toDouble().pow(5.0) +
+                0.42 * gameViewModel.upgrades[i].toDouble().pow(4.0) -
+                0.64 * gameViewModel.upgrades[i].toDouble().pow(3.0) -
+                0.039 * gameViewModel.upgrades[i].toDouble().pow(2.0) +
+                10.652 * gameViewModel.upgrades[i] +
+                5).toLong()
     }
 }

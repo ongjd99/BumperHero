@@ -23,7 +23,7 @@ class BossSprite(
     private var monsterX = x
     private var monsterY = y
     // Todo: Create a formula for health
-    private var maxHealth = 5 + (monsterLevel * 1)
+    private var maxHealth = 15 + (monsterLevel * 8)
     private var health = maxHealth
     private var damage = newDamage
     private val monsterMinVelocity = abs(newMonsterMinVelocity)
@@ -67,8 +67,7 @@ class BossSprite(
             // Upon collision, deal damage to monster
             health -= damage
             // Destroy monster
-            if (health <= 0) {
-                gameViewModel.destroyBossSpriteAndGrantGold(this)
+            if (gameViewModel.destroyBossSpriteAndGrantGold(this)) {
                 return
             }
 
@@ -135,5 +134,22 @@ class BossSprite(
                 xVelocity += 0.1
             }
         }
+
+        if (monsterY > screenHeight - image.height)
+        {
+            monsterY = screenHeight - image.height.toDouble()
+        }
+        if (monsterX > screenWidth - image.width)
+        {
+            monsterX = screenWidth - image.width.toDouble()
+        }
+        if (monsterX < 0)
+        {
+            monsterX = 0 + image.width.toDouble()
+        }
+    }
+
+    fun getHealth(): Int{
+        return health
     }
 }

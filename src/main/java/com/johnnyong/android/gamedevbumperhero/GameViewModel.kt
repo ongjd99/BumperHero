@@ -1,23 +1,15 @@
 package com.johnnyong.android.gamedevbumperhero
 
-import android.app.Application
-import android.content.Context
-import android.content.SharedPreferences
 import android.content.res.Resources
 import android.graphics.*
-import android.preference.PreferenceManager
-import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import android.os.Handler
+import android.os.Looper
 import androidx.lifecycle.ViewModel
-import com.johnnyong.android.gamedevbumperhero.SavedPreferences.getStoredGold
 import com.johnnyong.android.gamedevbumperhero.Upgrades.*
-import java.util.*
 
 private const val TAG = "MyActivity"
-private const val PREF_UPGRADES = "upgrades"
-private const val PREF_GOLD = "gold"
 
-class GameViewModel(public val app: Application) : AndroidViewModel(app) {
+class GameViewModel : ViewModel() {
     // Grab the size of the screen, used to detect bouncing on sides
     val screenWidth = Resources.getSystem().displayMetrics.widthPixels
     val screenHeight = Resources.getSystem().displayMetrics.heightPixels
@@ -30,6 +22,7 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
     // monsterImage, playerImage, heroSprite; not entire sure if they should be here
     private lateinit var monsterImage: Bitmap
     private lateinit var bossImage: Bitmap
+    private lateinit var powerupMonsterImage: Bitmap
     private lateinit var background: Bitmap
     private lateinit var heroDamageUpgradeImage: Bitmap
     private lateinit var heroVelocityUpgradeImage: Bitmap
@@ -38,11 +31,14 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
     private lateinit var monsterMinVelocityUpgradeImage: Bitmap
     lateinit var playerImage: Bitmap
     private lateinit var flippedPlayerImage: Bitmap
+    private lateinit var slimeCloudImage: Bitmap
+    private lateinit var autoSpawnerUpgradeImage: Bitmap
+
     lateinit var heroSprite: HeroSprite
 
     // gold; for shopping
     // Todo: change this when done
-    private var gold = 0
+    private var gold : Long = 250
 
     /*
         Array of the current upgrades level
@@ -53,8 +49,7 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
         i = 4; maxMonstersUserCanSpawn
      */
 
-    var upgrades = intArrayOf(0, 0, 0, 0, 0)
-
+    var upgrades: IntArray = intArrayOf(0, 0, 0, 0, 0, 0)
     // START OF UPGRADES SECTION
     // monsterLevel; determine amount of gold given and hp
     // Todo: Change back to level 1 after testing
@@ -72,21 +67,12 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
     // END OF UPGRADES SECTION
 
     private var currentMonsterCount = 0
-    // Prevent user from spawning too much and potentially crashing
-    // (Not entirely sure if it will crash but I'll just assume so
-    private val trueMaxMonstersUserCanSpawn = 100
     private var monstersKilled = 0
 
+    // Powerups
+    private var doubleGold = false
+
     fun load(resources: Resources?) {
-        // Loads saved data for upgrades
-        val temp = SavedPreferences.getStoredUpgrades(app)
-        temp.removeSuffix(",")
-        val st = StringTokenizer(temp, ",")
-
-        for(i in upgrades.indices) {
-            upgrades[i] = st.nextToken().toInt()
-        }
-
         if (!loaded)
         {
             // Loads the bitmaps from res file
@@ -105,6 +91,19 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
             val shopImage = BitmapFactory.decodeResource(
                 resources,
                 R.drawable.shop_icon
+            )
+            powerupMonsterImage = BitmapFactory.decodeResource(
+                resources,
+                R.drawable.powerup_monster
+            )
+            slimeCloudImage = Bitmap.createScaledBitmap(
+                BitmapFactory.decodeResource(
+                    resources,
+                    R.drawable.slime_cloud
+                ),
+                375,
+                150,
+                false
             )
             bossImage = BitmapFactory.decodeResource(
                 resources,
@@ -133,8 +132,8 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
                     resources,
                     R.drawable.hero_damage_upgrade
                 ),
-                375,
-                150,
+                475,
+                200,
                 false
             )
             heroVelocityUpgradeImage = Bitmap.createScaledBitmap(
@@ -142,8 +141,8 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
                         resources,
                         R.drawable.hero_velocity_upgrade
                     ),
-                375,
-                150,
+                475,
+                200,
                 false
             )
             monsterLevelUpgradeImage = Bitmap.createScaledBitmap(
@@ -151,8 +150,8 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
                     resources,
                     R.drawable.monster_level_upgrade
                 ),
-                375,
-                150,
+                475,
+                200,
                 false
             )
             monsterMaxSpawnUpgradeImage = Bitmap.createScaledBitmap(
@@ -160,21 +159,28 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
                     resources,
                     R.drawable.monster_max_spawn_upgrade
                 ),
-                375,
-                150,
+                475,
+                200,
                 false
             )
             monsterMinVelocityUpgradeImage = Bitmap.createScaledBitmap(
+                    BitmapFactory.decodeResource(
+                        resources,
+                        R.drawable.monster_velocity_upgrade
+                    ),
+            475,
+            200,
+            false
+            )
+            autoSpawnerUpgradeImage = Bitmap.createScaledBitmap(
                 BitmapFactory.decodeResource(
                     resources,
-                    R.drawable.monster_velocity_upgrade
+                    R.drawable.auto_spawner_upgrade
                 ),
-                375,
-                150,
+                475,
+                200,
                 false
             )
-            Log.i(TAG,"Screen Width: $screenWidth")
-            Log.i(TAG, "Screen Height: $screenHeight")
             // Adding Hero Sprites
             heroSprite = HeroSprite(this, playerImage,
                 flippedPlayerImage,
@@ -196,8 +202,6 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
             sprites.add(cloudSprite)
             updatables.add(cloudSprite)
 
-            // Loads saved gold value
-            gold = SavedPreferences.getStoredGold(app)
         }
     }
 
@@ -220,15 +224,20 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
             If none, we can assume the user clicked on an empty space
             Spawn a mob if so
         */
+        val rand = (0..10).random()
         if (!any && currentMonsterCount < maxMonstersUserCanSpawn &&
-            currentMonsterCount < trueMaxMonstersUserCanSpawn &&
-            (0..5).random() == 5)
+            rand == 10)
         {
             spawnBossMob(x, y)
             currentMonsterCount++
         }
-        else if(!any && currentMonsterCount < maxMonstersUserCanSpawn &&
-                currentMonsterCount < trueMaxMonstersUserCanSpawn)
+        else if (!any && currentMonsterCount < maxMonstersUserCanSpawn &&
+            rand == 9)
+        {
+            spawnPowerUpMob(x, y)
+            currentMonsterCount++
+        }
+        else if(!any && currentMonsterCount < maxMonstersUserCanSpawn)
         {
             spawnMob(x, y)
             currentMonsterCount++
@@ -245,8 +254,18 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
         paint.color = Color.BLACK
         paint.textSize = 75f
 
-        canvas.drawText("Gold: $gold", 1770f, 250f, paint)
-        canvas.drawText( "Score: $monstersKilled", 900f, 75f, paint)
+        canvas.drawText("Gold: $gold", 1000f, 75f, paint)
+        canvas.drawText( "Score: $monstersKilled", 400f, 75f, paint)
+
+        if (doubleGold)
+        {
+            val paint = Paint()
+            paint.color = Color.BLACK
+            paint.textSize = 100f
+
+            canvas.drawText("DOUBLE GOLD", 700f, 700f, paint)
+        }
+
         for(sprite in sprites) sprite.draw(canvas)
         for(sprite in shopSprites) sprite.draw(canvas)
     }
@@ -256,97 +275,119 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
         for (updatable in updatables) updatable.update()
     }
 
-    private fun spawnMob(x: Double, y: Double) {
-        // In case the user tries to spawn the monster under the ground
-        if (y > screenHeight - monsterImage.height)
-        {
+    fun spawnMob(x: Double, y: Double) {
+        if ((0..1).random() == 1) {
             val monsterSprite = MonsterSprite(
                 this, monsterImage,
-                monsterLevel, damage, x, screenHeight - monsterImage.height.toDouble(),
+                monsterLevel, damage, x, y,
                 monsterMinVelocity, monsterMaxVelocity
             )
             sprites.add(monsterSprite)
             updatables.add(monsterSprite)
         }
-        // Otherwise, spawn in the space tapped
-        else
-        {
-            if ((0..1).random() == 1) {
-                val monsterSprite = MonsterSprite(
-                    this, monsterImage,
-                    monsterLevel, damage, x, y,
-                    monsterMinVelocity, monsterMaxVelocity
-                )
-                sprites.add(monsterSprite)
-                updatables.add(monsterSprite)
-            }
-            else {
-                val monsterSprite = MonsterSprite(
-                    this, monsterImage,
-                    monsterLevel, damage, x, y,
-                    -monsterMinVelocity, monsterMaxVelocity
-                )
-                sprites.add(monsterSprite)
-                updatables.add(monsterSprite)
-            }
+        else {
+            val monsterSprite = MonsterSprite(
+                this, monsterImage,
+                monsterLevel, damage, x, y,
+                -monsterMinVelocity, monsterMaxVelocity
+            )
+            sprites.add(monsterSprite)
+            updatables.add(monsterSprite)
+        }
+    }
 
+
+    private fun spawnPowerUpMob(x: Double, y: Double) {
+        if ((0..1).random() == 1) {
+            val powerupMonsterSprite = PowerUpMonsterSprite(
+                this, powerupMonsterImage,
+                monsterLevel, damage, x, y,
+                monsterMinVelocity, monsterMaxVelocity
+            )
+            sprites.add(powerupMonsterSprite)
+            updatables.add(powerupMonsterSprite)
+        }
+        else {
+            val powerupMonsterSprite = PowerUpMonsterSprite(
+                this, powerupMonsterImage,
+                monsterLevel, damage, x, y,
+                -monsterMinVelocity, monsterMaxVelocity
+            )
+            sprites.add(powerupMonsterSprite)
+            updatables.add(powerupMonsterSprite)
         }
     }
 
     private fun spawnBossMob(x: Double, y: Double) {
-        // In case the user tries to spawn the monster under the ground
-        if (y > screenHeight + bossImage.height)
-        {
+        if ((0..1).random() == 1) {
             val bossSprite = BossSprite(
                 this, bossImage,
-                (monsterLevel * 2) + 5, damage, x, screenHeight - monsterImage.height.toDouble(),
-                monsterMinVelocity - 2, monsterMaxVelocity
+                monsterLevel, damage, x, y,
+                (monsterMinVelocity - 2), monsterMaxVelocity
             )
             sprites.add(bossSprite)
             updatables.add(bossSprite)
         }
-        // Otherwise, spawn in the space tapped
-        else
-        {
-            if ((0..1).random() == 1) {
-                val bossSprite = BossSprite(
-                    this, bossImage,
-                    (monsterLevel * 2) + 5, damage, x, y,
-                    (monsterMinVelocity - 2), monsterMaxVelocity
-                )
-                sprites.add(bossSprite)
-                updatables.add(bossSprite)
-            }
-            else {
-                val bossSprite = BossSprite(
-                    this, bossImage,
-                    (monsterLevel * 2) + 5, damage, x, y,
-                    -(monsterMinVelocity - 2), monsterMaxVelocity
-                )
-                sprites.add(bossSprite)
-                updatables.add(bossSprite)
-            }
-
+        else {
+            val bossSprite = BossSprite(
+                this, bossImage,
+                monsterLevel, damage, x, y,
+                -(monsterMinVelocity - 2), monsterMaxVelocity
+            )
+            sprites.add(bossSprite)
+            updatables.add(bossSprite)
         }
     }
 
-    fun destroyMonsterSpriteAndGrantGold(monsterSprite: MonsterSprite){
-        sprites.removeAt(sprites.indexOf(monsterSprite))
-        updatables.removeAt(updatables.indexOf(monsterSprite))
-        // Todo: Maybe make a formula for earning gold cause rn its linear
-        gold += monsterLevel + 1
-        SavedPreferences.setStoredGold(app, gold)
-        currentMonsterCount--
-        monstersKilled++
+    fun destroyMonsterSpriteAndGrantGold(monsterSprite: MonsterSprite): Boolean{
+        return if (monsterSprite.getHealth() <= 0){
+            sprites.removeAt(sprites.indexOf(monsterSprite))
+            updatables.removeAt(updatables.indexOf(monsterSprite))
+
+            if (doubleGold)
+            {
+                gold += monsterLevel + 1
+            }
+            gold += monsterLevel + 1
+            currentMonsterCount--
+            monstersKilled++
+            true
+        } else
+            false
     }
 
-    fun destroyBossSpriteAndGrantGold(bossSprite: BossSprite){
-        sprites.removeAt(sprites.indexOf(bossSprite))
-        updatables.removeAt(updatables.indexOf(bossSprite))
-        // Todo: Maybe make a formula for earning gold cause rn its linear
-        gold += monsterLevel * 2 + 5
-        currentMonsterCount--
-        monstersKilled++
+    fun destroyBossSpriteAndGrantGold(bossSprite: BossSprite): Boolean{
+        return if (bossSprite.getHealth() <= 0){
+            sprites.removeAt(sprites.indexOf(bossSprite))
+            updatables.removeAt(updatables.indexOf(bossSprite))
+
+            if (doubleGold)
+            {
+                gold += monsterLevel * 2 + 1
+            }
+            gold += monsterLevel * 2 + 1
+            currentMonsterCount--
+            monstersKilled++
+            true
+        } else
+            false
+    }
+
+    fun destroyPowerUpMonsterSpriteAndGrantGold(powerUpMonsterSprite: PowerUpMonsterSprite): Boolean{
+        return if (powerUpMonsterSprite.getHealth() <= 0){
+            sprites.removeAt(sprites.indexOf(powerUpMonsterSprite))
+            updatables.removeAt(updatables.indexOf(powerUpMonsterSprite))
+
+            doubleGold = true
+            Handler(Looper.getMainLooper()).postDelayed({
+                doubleGold = false
+            }, 60000)
+
+            currentMonsterCount--
+            monstersKilled++
+            true
+        } else
+            false
     }
 
     fun destroyShop()
@@ -370,40 +411,41 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
         shopSprites.add(monsterLevelUpgrade)
         shopActionItems.add(monsterLevelUpgrade)
 
-        val damageUpgrade = `1DamageUpgrade`(this, heroDamageUpgradeImage, 100, 300)
+        val damageUpgrade = `1DamageUpgrade`(this, heroDamageUpgradeImage, 100, 350)
         shopSprites.add(damageUpgrade)
         shopActionItems.add(damageUpgrade)
 
-        val heroVelocityUpgrade = `2HeroVelocityUpgrade`(this, heroVelocityUpgradeImage, 500, 100)
+        val heroVelocityUpgrade = `2HeroVelocityUpgrade`(this, heroVelocityUpgradeImage, 600, 100)
         shopSprites.add(heroVelocityUpgrade)
         shopActionItems.add(heroVelocityUpgrade)
 
-        val monsterVelocityUpgrade = `3MonsterVelocityUpgrade`(this, monsterMinVelocityUpgradeImage, 500, 300)
+        val monsterVelocityUpgrade = `3MonsterVelocityUpgrade`(this, monsterMinVelocityUpgradeImage, 600, 350)
         shopSprites.add(monsterVelocityUpgrade)
         shopActionItems.add(monsterVelocityUpgrade)
 
-        val maxMonstersUserCanSpawn = `4MaxMonstersUserCanSpawn`(this, monsterMaxSpawnUpgradeImage, 900, 100)
+        val maxMonstersUserCanSpawn = `4MaxMonstersUserCanSpawn`(this, monsterMaxSpawnUpgradeImage, 1100, 100)
         shopSprites.add(maxMonstersUserCanSpawn)
         shopActionItems.add(maxMonstersUserCanSpawn)
+
+        val slimeCloud= `5SlimeCloud`(this, autoSpawnerUpgradeImage, 1100, 350)
+        shopSprites.add(slimeCloud)
+        shopActionItems.add(slimeCloud)
     }
 
-    fun goldCheck(i: Int) : Boolean
+    fun getGold(): Long
     {
-        // Todo: Make an appropriate formula for upgrade costs
-        if (gold >= upgrades[i])
-        {
-            gold -= upgrades[i]
-            SavedPreferences.setStoredGold(app, gold)
-            upgradeIncrease(i)
-            return true
-        }
-        return false
+        return gold
+    }
+
+    fun takeGold(formula: Long, i: Int)
+    {
+        gold -= formula
+        upgradeIncrease(i)
     }
 
     private fun upgradeIncrease(i: Int)
     {
         upgrades[i] = upgrades[i] + 1
-        SavedPreferences.setStoredUpgrades(app, upgrades)
         when (i)
         {
             0 -> monsterLevel = upgrades[i] + 1
@@ -434,8 +476,14 @@ class GameViewModel(public val app: Application) : AndroidViewModel(app) {
             }
             3 -> monsterMinVelocity = upgrades[i] + 3.0
             4 -> maxMonstersUserCanSpawn = upgrades[i] + 5
+            5 -> {
+                val slimeCloudSprite = SlimeCloudSprite(this, slimeCloudImage,
+                    0.0 - slimeCloudImage.width, (100..350).random().toDouble())
+                sprites.add(slimeCloudSprite)
+                updatables.add(slimeCloudSprite)
+            }
         }
-
-        SavedPreferences.setStoredUpgrades(app, upgrades)
     }
+
+
 }
